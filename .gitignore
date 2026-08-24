@@ -1,3 +1,20 @@
+# Node and frontend build artifacts
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Backend runtime artifacts
+backend/.venv/
+backend/venv/
+backend/__pycache__/
+backend/*.db
+backend/*.sqlite3
+backend/delay_tracker.db
+
+# Logs
+*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
