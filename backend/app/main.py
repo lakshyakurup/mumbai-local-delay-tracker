@@ -84,6 +84,11 @@ def normalize_line_name(line_name: str) -> RailwayLine:
     return line
 
 
+@app.get("/")
+def health_check() -> dict[str, str]:
+    return {"status": "online", "app": "Mumbai Local Delay Tracker API"}
+
+
 @app.get("/api/delays", response_model=list[DelayIncidentRead])
 def get_delays(
     db: Annotated[Session, Depends(get_db)],

@@ -1,0 +1,11 @@
+{
+  "framework": "nextjs",
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/dashboard",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
+}

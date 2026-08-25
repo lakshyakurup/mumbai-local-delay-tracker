@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: mumbai-local-delay-tracker-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////app/data/delay_tracker.db
+      - key: CORS_ORIGINS
+        sync: false
+    disk:
+      name: delay-tracker-data
+      mountPath: /app/data
+      sizeGB: 1

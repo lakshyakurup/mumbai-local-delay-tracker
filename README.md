@@ -1,6 +1,30 @@
 # Mumbai Local Train Delay Tracker
 
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.116-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-scheduled-2088FF?logo=github-actions&logoColor=white)](https://docs.github.com/en/actions)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 A production-ready full-stack starter for tracking and visualizing Mumbai local train delays across the Central, Western, and Harbour lines.
+
+## 🚀 Live Demo & Deployment
+
+- **Live Dashboard (Vercel):** [Open dashboard](https://your-vercel-app.vercel.app)
+- **Live API Swagger Docs:** [Open `/docs`](https://your-render-api.onrender.com/docs)
+
+Replace these placeholders with the deployed Vercel and Render URLs after provisioning the services.
+
+## Architecture & Data Flow
+
+```mermaid
+flowchart LR
+	C[GitHub Actions cron<br/>every 15 minutes] --> S[Scraper<br/>parse updates]
+	S -->|POST /api/delays| A[FastAPI Backend]
+	A --> D[(SQLite<br/>persistent Render disk)]
+	D -->|GET delays, stats, status| N[Next.js Dashboard UI]
+	U[Recruiter or commuter] --> N
+```
 
 ## Architecture
 
@@ -43,7 +67,9 @@ Tech stack: FastAPI + SQLAlchemy + SQLite
 - `line` (`Central`, `Western`, `Harbour`)
 - `direction` (`UP`, `DN`)
 - `station`
+- `affected_stretch`
 - `delay_minutes`
+- `priority`
 - `announcement_text`
 - `created_at`
 
@@ -103,6 +129,28 @@ docker compose exec backend python -m app.seed
 ```
 
 The scheduled workflow in `.github/workflows/scrape_cron.yml` runs every 15 minutes. Configure the repository secret `BACKEND_API_URL` with the deployed backend base URL, such as `https://your-api.example.com`.
+
+## Deploy It Yourself
+
+### 1. Deploy the backend on Render
+
+1. Create a new Render Blueprint and select this repository.
+2. Render detects [render.yaml](render.yaml), installs `backend/requirements.txt`, and starts FastAPI with Uvicorn.
+3. Set `CORS_ORIGINS` to the final Vercel dashboard URL.
+4. The included 1 GB persistent disk stores SQLite at `/app/data/delay_tracker.db`.
+5. Seed the database once from the Render shell with `python -m app.seed`.
+
+### 2. Deploy the frontend on Vercel
+
+1. Import the repository into Vercel and set the project root to `frontend`.
+2. Set `NEXT_PUBLIC_API_BASE_URL` to the Render backend URL.
+3. Deploy using the included [vercel.json](frontend/vercel.json) configuration.
+
+### 3. Enable scheduled scraping
+
+1. In the GitHub repository settings, add an Actions secret named `BACKEND_API_URL`.
+2. Set its value to the Render backend base URL without a trailing slash.
+3. The workflow runs at `*/15 * * * *` and can also be started manually from the Actions tab.
 
 ## Frontend
 
