@@ -55,6 +55,10 @@ Tech stack: FastAPI + SQLAlchemy + SQLite
 	- Returns status summary for each line (`Normal`, `Minor Delays`, `Major Disruptions`).
 - `POST /api/delays`
 	- Ingest a new delay incident.
+- `GET /api/delays/stats`
+	- Returns active delay count, average delay, worst-affected line, and stretch.
+- `GET /api/lines/{line_name}`
+	- Returns a detailed breakdown for `Central`, `Western`, or `Harbour`.
 
 ### Run backend
 
@@ -83,6 +87,22 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 python scraper/mock_scraper.py --count 10
 ```
+
+## Quick Start with Docker
+
+Build and start both services from the repository root:
+
+```bash
+docker compose up --build
+```
+
+The dashboard is available at `http://localhost:3000` and the API at `http://localhost:8000`. Seed the persistent database in a one-off container with:
+
+```bash
+docker compose exec backend python -m app.seed
+```
+
+The scheduled workflow in `.github/workflows/scrape_cron.yml` runs every 15 minutes. Configure the repository secret `BACKEND_API_URL` with the deployed backend base URL, such as `https://your-api.example.com`.
 
 ## Frontend
 
@@ -128,4 +148,9 @@ npm run dev
 - Swap SQLite with PostgreSQL for multi-instance deployments.
 - Add authentication and role-based write access before exposing `POST /api/delays` publicly.
 - Deploy frontend and backend behind HTTPS with environment-specific configs.
+
+## Live Demo
+
+- Frontend (Vercel): `https://your-vercel-app.example.com`
+- Backend (Render): `https://your-render-api.example.com`
 

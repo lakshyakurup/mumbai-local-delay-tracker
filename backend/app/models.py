@@ -14,7 +14,9 @@ class DelayIncident(Base):
     line: Mapped[str] = mapped_column(String(20), index=True)
     direction: Mapped[str] = mapped_column(String(2), index=True)
     station: Mapped[str] = mapped_column(String(100), index=True)
+    affected_stretch: Mapped[str] = mapped_column(String(120), index=True)
     delay_minutes: Mapped[int] = mapped_column(Integer)
+    priority: Mapped[str] = mapped_column(String(10), index=True)
     announcement_text: Mapped[str] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

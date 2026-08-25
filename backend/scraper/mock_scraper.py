@@ -1,70 +1,51 @@
 import argparse
-import random
-from datetime import datetime
+import os
+import re
+from datetime import datetime, timezone
 
 import requests
 
-API_URL = "http://localhost:8000/api/delays"
+API_URL = os.getenv("API_URL", "http://localhost:8000/api/delays")
 
-LINES = ["Central", "Western", "Harbour"]
-DIRECTIONS = ["UP", "DN"]
-
-LINE_SEGMENTS = {
-    "Central": [
-        ("Dadar", "Kurla"),
-        ("Kurla", "Thane"),
-        ("Ghatkopar", "Vikhroli"),
-        ("Byculla", "Dadar"),
-    ],
-    "Western": [
-        ("Andheri", "Bandra"),
-        ("Borivali", "Andheri"),
-        ("Dadar", "Mumbai Central"),
-        ("Virar", "Nalasopara"),
-    ],
-    "Harbour": [
-        ("Wadala Road", "Kurla"),
-        ("Panvel", "Vashi"),
-        ("Govandi", "Mankhurd"),
-        ("Chembur", "Tilak Nagar"),
-    ],
-}
-
-REASONS = [
-    "signal issue",
-    "technical snag",
-    "overhead wire fluctuation",
-    "track congestion",
-    "points failure",
-    "heavy rainfall impact",
+SAMPLE_PAYLOADS = [
+    "Western UP: signal issue between Dadar - Bandra; trains delayed by 18 minutes. Major disruption.",
+    "Central DN: technical snag affecting Dadar - Kurla stretch; 27 min delay. Severe disruption.",
+    "Harbour UP: points failure between Wadala Road - Kurla causing 9 minutes delay. Minor disruption.",
+    "Western DN: overhead wire fluctuation affecting Andheri - Borivali services by 12 minutes. Major disruption.",
+    "Central UP: track congestion between Ghatkopar - Vikhroli; trains running 6 minutes late. Minor disruption.",
+    "Harbour DN: heavy rainfall impact between Panvel - Vashi; services delayed by 22 minutes. Severe disruption.",
 ]
 
 
-def generate_mock_incident() -> dict:
-    line = random.choice(LINES)
-    direction = random.choice(DIRECTIONS)
-    start_station, end_station = random.choice(LINE_SEGMENTS[line])
-    delay_minutes = random.randint(3, 35)
-    reason = random.choice(REASONS)
-
-    station = random.choice([start_station, end_station])
-    announcement_text = (
-        f"{reason.capitalize()} between {start_station} and {end_station} causing "
-        f"{delay_minutes} min delay on {line} Line {direction}."
+def parse_update(text: str) -> dict:
+    match = re.search(
+        r"(?P<line>Western|Central|Harbour) (?P<direction>UP|DN): .*?"
+        r"(?:between |affecting )(?P<stretch>[A-Za-z ]+ - [A-Za-z ]+).*?"
+        r"(?P<delay>\d+) ?(?:min|minutes)",
+        text,
+        re.IGNORECASE,
     )
+    if not match:
+        raise ValueError(f"Could not parse railway update: {text}")
 
+    delay = int(match.group("delay"))
+    priority = "Severe" if delay >= 20 else "Major" if delay >= 10 else "Minor"
+    stretch = match.group("stretch").strip()
     return {
-        "line": line,
-        "direction": direction,
-        "station": station,
-        "delay_minutes": delay_minutes,
-        "announcement_text": announcement_text,
+        "line": match.group("line").title(),
+        "direction": match.group("direction").upper(),
+        "station": stretch.split(" - ")[0].strip(),
+        "affected_stretch": stretch,
+        "delay_minutes": delay,
+        "priority": priority,
+        "announcement_text": text,
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
 def post_mock_incidents(count: int) -> None:
-    for _ in range(count):
-        incident = generate_mock_incident()
+    for index in range(count):
+        incident = parse_update(SAMPLE_PAYLOADS[index % len(SAMPLE_PAYLOADS)])
         response = requests.post(API_URL, json=incident, timeout=10)
         if response.ok:
             created = response.json()
