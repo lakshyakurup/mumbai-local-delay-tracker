@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { fetchDelays, fetchStats } from "@/lib/api";
+import { fetchDelays, fetchStats } from "../lib/api";
 import { DelayIncident, DelayStats, RailwayLine } from "@/lib/types";
 
 const LINES: Array<RailwayLine | "All Lines"> = ["All Lines", "Western", "Central", "Harbour"];
