@@ -1,204 +1,158 @@
 # Mumbai Local Train Delay Tracker
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.116-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-scheduled-2088FF?logo=github-actions&logoColor=white)](https://docs.github.com/en/actions)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+Production-ready full-stack observability for Mumbai suburban rail delays across the Central, Western, and Harbour lines.
 
-A production-ready full-stack starter for tracking and visualizing Mumbai local train delays across the Central, Western, and Harbour lines.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.116-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/) [![CI](https://github.com/lakshyakurup/mumbai-local-delay-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/lakshyakurup/mumbai-local-delay-tracker/actions/workflows/ci.yml)
 
-## 🚀 Live Demo & Deployment
+## What is included
 
-- **Live Dashboard (Vercel):** [Open dashboard](https://your-vercel-app.vercel.app)
-- **Live API Swagger Docs:** [Open `/docs`](https://your-render-api.onrender.com/docs)
+- FastAPI v2 API with CORS, rate limiting, Prometheus metrics, health probes, typed schemas, and SQLAlchemy persistence.
+- Scraper service that parses JSON feeds and announcement text, classifies severity, and records updates every 15 minutes.
+- Next.js command center with live line cards, delay observations, analytics trends, station-level metrics, and responsive styling.
+- Docker Compose for local development, optimized backend/frontend images, Render Blueprint deployment, and GitHub Actions automation.
+- Focused pytest and React Testing Library coverage for scraper logic, API behavior, and dashboard components.
 
-Replace these placeholders with the deployed Vercel and Render URLs after provisioning the services.
-
-## Architecture & Data Flow
+## System flow
 
 ```mermaid
 flowchart LR
-	C[GitHub Actions cron<br/>every 15 minutes] --> S[Scraper<br/>parse updates]
-	S -->|POST /api/delays| A[FastAPI Backend]
-	A --> D[(SQLite<br/>persistent Render disk)]
-	D -->|GET delays, stats, status| N[Next.js Dashboard UI]
-	U[Recruiter or commuter] --> N
+    Source[Live status source] --> Parser[ScraperService]
+    Cron[15-minute scheduler] --> Parser
+    Actions[GitHub Actions heartbeat] --> API[FastAPI backend]
+    Render[Render cron worker] --> API
+    Parser --> API
+    API --> DB[(SQLite or PostgreSQL)]
+    API --> Dashboard[Next.js dashboard]
+    Commuter[Commuter] --> Dashboard
 ```
 
-## Architecture
+## Repository map
 
 ```text
 .
 ├── backend/
-│   ├── app/
-│   │   ├── database.py        # SQLAlchemy engine/session setup
-│   │   ├── main.py            # FastAPI application and API routes
-│   │   ├── models.py          # DelayIncident ORM model
-│   │   └── schemas.py         # Pydantic request/response schemas
-│   ├── requirements.txt
-│   └── scraper/
-│       └── mock_scraper.py    # Mock announcement generator + ingestor
+│   ├── main.py                         # FastAPI application bootstrap
+│   ├── config.py                       # Environment-backed settings
+│   ├── database.py                     # SQLAlchemy engine and sessions
+│   ├── schemas.py                      # Pydantic API contracts
+│   ├── models/database.py              # DelayRecord, LineStatus, StationMetric
+│   ├── routers/
+│   │   ├── delays.py                   # Delay CRUD, line status, scraper trigger
+│   │   ├── stats.py                    # Summary and historical trends
+│   │   └── health.py                   # Database-backed health endpoint
+│   ├── services/
+│   │   ├── scraper.py                  # JSON/text parser and persistence service
+│   │   └── scheduler.py                # 15-minute APScheduler job
+│   └── tests/
+│       ├── test_api.py                 # FastAPI endpoint tests
+│       └── test_scraper.py             # Parser and severity tests
 ├── frontend/
 │   ├── app/
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
+│   │   ├── page.tsx                    # Live command center
+│   │   ├── analytics/page.tsx          # Historical analytics view
+│   │   ├── lines/page.tsx              # Station-by-station view
+│   │   └── layout.tsx                  # Global provider and navigation shell
 │   ├── components/
-│   │   └── dashboard.tsx
-│   ├── lib/
-│   │   ├── api.ts
-│   │   └── types.ts
-│   ├── package.json
-│   ├── tailwind.config.ts
-│   └── ...Next.js config files
-└── README.md
+│   │   ├── CommandCenter.tsx
+│   │   ├── LineStatusCard.tsx
+│   │   ├── DelayChart.tsx
+│   │   ├── LiveTicker.tsx
+│   │   └── Navbar.tsx
+│   ├── context/AppContext.tsx          # Shared polling state
+│   ├── hooks/                          # Live delay and local storage hooks
+│   ├── lib/api.ts                      # Typed API client
+│   ├── utils/formatters.ts             # Delay, time, and severity formatters
+│   └── __tests__/dashboard.test.tsx    # React Testing Library suite
+├── database/schema.sql                 # Portable relational schema
+├── .github/workflows/ci.yml            # Backend/frontend validation
+├── .github/workflows/scraper-cron.yml # 15-minute production heartbeat
+├── Dockerfile.backend                  # Multi-stage API image
+├── Dockerfile.frontend                 # Standalone Next.js image
+├── docker-compose.yml                  # Local full-stack orchestration
+└── render.yaml                         # Render web service and cron worker
 ```
 
-## Backend
+Additional governance and operating documents are maintained in [API_SPEC.md](API_SPEC.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DEPLOYMENT.md](DEPLOYMENT.md), [SETUP_GUIDE.md](SETUP_GUIDE.md), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), [ROADMAP.md](ROADMAP.md), and [CHANGELOG.md](CHANGELOG.md).
 
-Tech stack: FastAPI + SQLAlchemy + SQLite
+## API surface
 
-### Data model
+The production API is exposed by `backend.main:app`.
 
-`DelayIncident` fields:
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Database-backed service health |
+| `GET` | `/metrics` | Prometheus metrics |
+| `GET` | `/api/v2/lines/status` | Current Central, Western, and Harbour status |
+| `GET` | `/api/v2/delays` | Recent delay records with line and time filters |
+| `POST` | `/api/v2/delays` | Create a delay observation |
+| `DELETE` | `/api/v2/delays/{record_id}` | Remove an observation |
+| `GET` | `/api/v2/lines/{line}/stations` | Station reliability metrics |
+| `GET` | `/api/v2/stats/summary` | Average delay and peak hour |
+| `GET` | `/api/v2/stats/trends` | Daily historical delay buckets |
+| `POST` | `/api/v2/scraper/run` | Authenticated one-shot scraper execution |
 
-- `id`
-- `line` (`Central`, `Western`, `Harbour`)
-- `direction` (`UP`, `DN`)
-- `station`
-- `affected_stretch`
-- `delay_minutes`
-- `priority`
-- `announcement_text`
-- `created_at`
+Interactive OpenAPI documentation is available at `/docs` when the API is running. Full request and response contracts are in [API_SPEC.md](API_SPEC.md).
 
-### API endpoints
+## Local development
 
-- `GET /api/delays?line=Central&limit=50`
-	- Returns latest delay incidents (optionally filtered by line).
-- `GET /api/status`
-	- Returns status summary for each line (`Normal`, `Minor Delays`, `Major Disruptions`).
-- `POST /api/delays`
-	- Ingest a new delay incident.
-- `GET /api/delays/stats`
-	- Returns active delay count, average delay, worst-affected line, and stretch.
-- `GET /api/lines/{line_name}`
-	- Returns a detailed breakdown for `Central`, `Western`, or `Harbour`.
-
-### Run backend
-
-1. Create and activate a virtual environment:
+### Option 1: Docker Compose
 
 ```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Start API server:
-
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-4. Optional: generate mock incidents:
-
-```bash
-python scraper/mock_scraper.py --count 10
-```
-
-## Quick Start with Docker
-
-Build and start both services from the repository root:
-
-```bash
+git clone https://github.com/lakshyakurup/mumbai-local-delay-tracker.git
+cd mumbai-local-delay-tracker
+cp .env.example .env
 docker compose up --build
 ```
 
-The dashboard is available at `http://localhost:3000` and the API at `http://localhost:8000`. Seed the persistent database in a one-off container with:
+Open `http://localhost:3000` for the dashboard and `http://localhost:8000/docs` for the API.
+
+### Option 2: Native processes
+
+Backend:
 
 ```bash
-docker compose exec backend python -m app.seed
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The scheduled workflow in `.github/workflows/scrape_cron.yml` runs every 15 minutes. Configure the repository secret `BACKEND_API_URL` with the deployed backend base URL, such as `https://your-api.example.com`.
-
-## Deploy It Yourself
-
-### 1. Deploy the backend on Render
-
-1. Create a new Render Blueprint and select this repository.
-2. Render detects [render.yaml](render.yaml), installs `backend/requirements.txt`, and starts FastAPI with Uvicorn.
-3. Set `CORS_ORIGINS` to the final Vercel dashboard URL.
-4. The included 1 GB persistent disk stores SQLite at `/app/data/delay_tracker.db`.
-5. Seed the database once from the Render shell with `python -m app.seed`.
-
-### 2. Deploy the frontend on Vercel
-
-1. Import the repository into Vercel and set the project root to `frontend`.
-2. Set `NEXT_PUBLIC_API_BASE_URL` to the Render backend URL.
-3. Deploy using the included [vercel.json](frontend/vercel.json) configuration.
-
-### 3. Enable scheduled scraping
-
-1. In the GitHub repository settings, add an Actions secret named `BACKEND_API_URL`.
-2. Set its value to the Render backend base URL without a trailing slash.
-3. The workflow runs at `*/15 * * * *` and can also be started manually from the Actions tab.
-
-## Frontend
-
-Tech stack: Next.js App Router + TypeScript + Tailwind CSS
-
-### Features
-
-- Dark dashboard UI with atmospheric gradient background
-- Header with live indicator
-- Summary cards for Western, Central, and Harbour lines
-- Search and filter by line and station
-- Live feed of delay incidents with station badges, delay tags, and timestamps
-- Auto-refresh from backend every 15 seconds
-
-### Run frontend
-
-1. Install dependencies:
+Frontend, in a second terminal:
 
 ```bash
 cd frontend
 npm install
+NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
 ```
 
-2. Configure API URL:
+The backend test suite runs with `pytest backend/tests -q`. The frontend checks run with `cd frontend && npm test` and `npm run build`.
 
-```bash
-cp .env.local.example .env.local
-```
+## Configuration
 
-3. Start frontend:
+Copy [.env.example](.env.example) and set values for the target environment:
 
-```bash
-npm run dev
-```
+| Variable | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | SQLite URL locally or PostgreSQL URL in production |
+| `CORS_ORIGINS` | Yes | Comma-separated frontend origins |
+| `NEXT_PUBLIC_API_URL` | Frontend | Public API base URL |
+| `SCRAPER_SOURCE_URL` | No | JSON or text status source |
+| `SCRAPER_TOKEN` | Production | Bearer token for scraper triggers |
+| `RATE_LIMIT` | No | SlowAPI limit, default `120/minute` |
 
-4. Open app:
+## Deployment
 
-`http://localhost:3000`
+- **Render:** use [render.yaml](render.yaml) to provision the API web service and 15-minute cron worker. Set `CORS_ORIGINS`, `SCRAPER_TOKEN`, and the production database URL.
+- **Vercel:** set the frontend root to `frontend` and configure `NEXT_PUBLIC_API_URL` with the Render API URL.
+- **GitHub Actions:** configure `SCRAPER_URL` and `SCRAPER_TOKEN` repository secrets for the scheduled scraper heartbeat.
+- **Scale:** use PostgreSQL for multiple API instances; SQLite is intended for local development or a single persistent-disk instance.
 
-## Production notes
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete production checklist.
 
-- Replace wildcard CORS in `backend/app/main.py` with explicit frontend domain(s).
-- Swap SQLite with PostgreSQL for multi-instance deployments.
-- Add authentication and role-based write access before exposing `POST /api/delays` publicly.
-- Deploy frontend and backend behind HTTPS with environment-specific configs.
+## Project status
 
-## Live Demo
+Current release: **2.0.0**. See [CHANGELOG.md](CHANGELOG.md) for milestones and [ROADMAP.md](ROADMAP.md) for planned scaling work.
 
-- Frontend (Vercel): `https://your-vercel-app.example.com`
-- Backend (Render): `https://your-render-api.example.com`
+## License
 
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
