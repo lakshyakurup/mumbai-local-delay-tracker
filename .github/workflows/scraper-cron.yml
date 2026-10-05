@@ -1,0 +1,11 @@
+name: Scraper heartbeat
+on:
+  schedule: [{ cron: "*/15 * * * *" }]
+  workflow_dispatch:
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger production scraper
+        env: { SCRAPER_URL: "${{ secrets.SCRAPER_URL }}", SCRAPER_TOKEN: "${{ secrets.SCRAPER_TOKEN }}" }
+        run: curl --fail-with-body --retry 3 -X POST "$SCRAPER_URL/api/v2/scraper/run" -H "Authorization: Bearer $SCRAPER_TOKEN"

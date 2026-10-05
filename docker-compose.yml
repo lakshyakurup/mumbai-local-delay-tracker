@@ -1,7 +1,8 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: Dockerfile.backend
     ports:
       - "8000:8000"
     volumes:
@@ -12,13 +13,14 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      context: .
+      dockerfile: Dockerfile.frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
 
 volumes:
   backend-data:

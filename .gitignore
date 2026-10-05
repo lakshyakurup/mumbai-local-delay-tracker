@@ -1,3 +1,9 @@
+frontend/tsconfig.tsbuildinfo
+backend/test_delay_tracker.db
+backend/__pycache__/
+test_delay_tracker.db
+frontend/.next/
+frontend/node_modules/
 # Node and frontend build artifacts
 node_modules/
 frontend/node_modules/

@@ -1,0 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { DelayChart } from "@/components/DelayChart";
+import { fetchSummary, fetchTrends } from "@/lib/api";
+import type { StatsSummary, TrendPoint } from "@/lib/types";
+
+export default function AnalyticsPage() { const [summary, setSummary] = useState<StatsSummary | null>(null); const [trends, setTrends] = useState<TrendPoint[]>([]); useEffect(() => { void Promise.all([fetchSummary(), fetchTrends()]).then(([nextSummary, nextTrends]) => { setSummary(nextSummary); setTrends(nextTrends); }); }, []); return <main className="page-shell content-page"><header className="page-heading"><p className="eyebrow">Commuter telemetry / 02</p><h1>Patterns worth<br /><em>paying attention to.</em></h1></header><section className="analytics-layout"><div className="panel chart-panel"><div className="section-heading"><div><p className="eyebrow">Rolling window</p><h2>Delay pressure</h2></div><span>{summary?.window_hours ?? 24}h</span></div><DelayChart data={trends} /></div><div className="panel insight-panel"><p className="eyebrow">Readout</p><h2>{summary?.peak_hour == null ? "No peak detected" : `Pressure peaks at ${summary.peak_hour}:00`}</h2><p>Average observed delay across the network is <b>{summary?.average_delay_minutes.toFixed(1) ?? "0.0"} minutes</b>.</p><div className="line-summary">{Object.entries(summary?.by_line ?? {}).map(([line, average]) => <div key={line}><span>{line}</span><b>{average.toFixed(1)}m</b></div>)}</div></div></section></main>; }

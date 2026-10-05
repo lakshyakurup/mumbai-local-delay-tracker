@@ -1,0 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { fetchStations } from "@/lib/api";
+import { RAILWAY_LINES, type RailwayLine, type StationMetric } from "@/lib/types";
+
+export default function LinesPage() { const [line, setLine] = useState<RailwayLine>("Central"); const [stations, setStations] = useState<StationMetric[]>([]); useEffect(() => { void fetchStations(line).then(setStations).catch(() => setStations([])); }, [line]); return <main className="page-shell content-page"><header className="page-heading"><p className="eyebrow">Corridor detail / 03</p><h1>Every station<br /><em>leaves a trace.</em></h1></header><div className="line-tabs">{RAILWAY_LINES.map((item) => <button className={item === line ? "active" : ""} key={item} onClick={() => setLine(item)}>{item}</button>)}</div><section className="panel station-panel"><div className="station-table-head"><span>Station</span><span>Average delay</span><span>Reliability</span><span>Observed</span></div>{stations.length ? stations.map((station) => <div className="station-row" key={station.station}><strong>{station.station}</strong><span>{station.average_delay_minutes.toFixed(1)} min</span><span>{station.reliability_percent.toFixed(1)}%</span><span>{station.trains_observed}</span></div>) : <p className="empty-state">No station metrics have been recorded for {line} yet.</p>}</section></main>; }
