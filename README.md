@@ -54,6 +54,8 @@ flowchart LR
 │   │   └── layout.tsx                  # Global provider and navigation shell
 │   ├── components/
 │   │   ├── CommandCenter.tsx
+│   │   ├── LiveIndicator.tsx
+│   │   ├── LineCard.tsx
 │   │   ├── LineStatusCard.tsx
 │   │   ├── DelayChart.tsx
 │   │   ├── LiveTicker.tsx
