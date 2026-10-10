@@ -1,11 +1,43 @@
 name: Scraper heartbeat
 on:
-  schedule: [{ cron: "*/15 * * * *" }]
+  schedule:
+    - cron: "*/15 * * * *"
   workflow_dispatch:
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate scraper configuration
+        env:
+          SCRAPER_URL: ${{ secrets.SCRAPER_URL }}
+          SCRAPER_TOKEN: ${{ secrets.SCRAPER_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SCRAPER_URL}" ]; then
+            echo "::error::Missing required repository secret SCRAPER_URL (example: https://mumbai-local-delay-tracker-api.onrender.com)"
+            exit 1
+          fi
+          if [ -z "${SCRAPER_TOKEN}" ]; then
+            echo "::error::Missing required repository secret SCRAPER_TOKEN used by /api/v2/scraper/run authentication"
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          import sys
+          from urllib.parse import urlparse
+
+          raw = os.environ["SCRAPER_URL"].strip()
+          parsed = urlparse(raw)
+          if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+              print("::error::SCRAPER_URL must be an absolute http(s) URL, for example https://mumbai-local-delay-tracker-api.onrender.com")
+              sys.exit(1)
+          PY
+
       - name: Trigger production scraper
-        env: { SCRAPER_URL: "${{ secrets.SCRAPER_URL }}", SCRAPER_TOKEN: "${{ secrets.SCRAPER_TOKEN }}" }
-        run: curl --fail-with-body --retry 3 -X POST "$SCRAPER_URL/api/v2/scraper/run" -H "Authorization: Bearer $SCRAPER_TOKEN"
+        env:
+          SCRAPER_URL: ${{ secrets.SCRAPER_URL }}
+          SCRAPER_TOKEN: ${{ secrets.SCRAPER_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --retry 3 -X POST "${SCRAPER_URL%/}/api/v2/scraper/run" -H "Authorization: ${SCRAPER_TOKEN}"
