@@ -1,28 +1,42 @@
 name: Scrape Mumbai Local Delays
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install scraper dependencies
-        run: python -m pip install --upgrade pip requests
-
-      - name: Persist latest delay update
+      - name: Validate scraper configuration
         env:
-          API_URL: ${{ secrets.BACKEND_API_URL }}/api/delays
+          SCRAPER_URL: ${{ secrets.SCRAPER_URL }}
+          SCRAPER_TOKEN: ${{ secrets.SCRAPER_TOKEN }}
         run: |
-          test -n "$API_URL" || (echo "BACKEND_API_URL secret is required" && exit 1)
-          python backend/scraper/mock_scraper.py --count 1
+          set -euo pipefail
+          if [ -z "${SCRAPER_URL}" ]; then
+            echo "::error::Missing required repository secret SCRAPER_URL (example: https://mumbai-local-delay-tracker-api.onrender.com)"
+            exit 1
+          fi
+          if [ -z "${SCRAPER_TOKEN}" ]; then
+            echo "::error::Missing required repository secret SCRAPER_TOKEN used by /api/v2/scraper/run authentication"
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          import sys
+          from urllib.parse import urlparse
+
+          raw = os.environ["SCRAPER_URL"].strip()
+          parsed = urlparse(raw)
+          if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+              print("::error::SCRAPER_URL must be an absolute http(s) URL, for example https://mumbai-local-delay-tracker-api.onrender.com")
+              sys.exit(1)
+          PY
+
+      - name: Trigger production scraper endpoint
+        env:
+          SCRAPER_URL: ${{ secrets.SCRAPER_URL }}
+          SCRAPER_TOKEN: ${{ secrets.SCRAPER_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --retry 3 -X POST "${SCRAPER_URL%/}/api/v2/scraper/run" -H "Authorization: ${SCRAPER_TOKEN}"
