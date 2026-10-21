@@ -1,31 +1,22 @@
-from collections.abc import Generator
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-from .config import get_settings
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+from backend.config import settings
 
+engine = create_engine(
+    settings.database_url,
+    pool_size=20,
+    max_overflow=30,
+    pool_timeout=30,
+    pool_recycle=1800,
+    connect_args={"sslmode": "require"} if "localhost" not in settings.database_url else {}
+)
 
-class Base(DeclarativeBase):
-    pass
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
-
-settings = get_settings()
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-engine = create_engine(settings.database_url, connect_args=connect_args, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
-
-
-def get_db() -> Generator[Session, None, None]:
-    session = SessionLocal()
+def get_db():
+    db = SessionLocal()
     try:
-        yield session
+        yield db
     finally:
-        session.close()
-
-
-def check_database() -> bool:
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
-        return True
-    except Exception:
-        return False
+        db.close()

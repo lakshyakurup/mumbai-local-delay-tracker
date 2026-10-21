@@ -1,26 +1,20 @@
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
-from .scraper import ScraperService
-from ..database import SessionLocal
+from apscheduler.triggers.interval import IntervalTrigger
+from backend.services.scraper import ScraperService
 
 logger = logging.getLogger(__name__)
-scheduler = BackgroundScheduler(timezone="Asia/Kolkata")
 
+scheduler = BackgroundScheduler()
 
-def run_scraper_job() -> int:
-    with SessionLocal() as session:
-        count = ScraperService(session).run_once()
-        logger.info("Scraper job persisted %s updates", count)
-        return count
-
-
-def start_scheduler() -> None:
-    if scheduler.running:
-        return
-    scheduler.add_job(run_scraper_job, "interval", minutes=15, id="delay-scraper", replace_existing=True, max_instances=1)
+def start_scheduler():
+    scheduler.add_job(
+        ScraperService.run,
+        trigger=IntervalTrigger(minutes=15),
+        id='scraper_15min',
+        name='Scraper Task',
+        misfire_grace_time=60,
+        max_instances=1
+    )
     scheduler.start()
-
-
-def stop_scheduler() -> None:
-    if scheduler.running:
-        scheduler.shutdown(wait=False)
+    logger.info("Background scheduler initialized and started.")

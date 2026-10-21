@@ -1,0 +1,96 @@
+{
+  "network": "Mumbai Suburban Railway",
+  "zones": ["Western Railway (WR)", "Central Railway (CR)"],
+  "lines": {
+    "western": {
+      "id": "western",
+      "name": "Western Line",
+      "zone": "Western Railway",
+      "terminal_south": "Churchgate (CCG)",
+      "terminal_north": "Dahanu Road (DRD)",
+      "interchanges": ["Dadar (WR/CR)", "Andheri (Metro L1)", "Goregaon (Harbour)", "Vasai Road (CR Bypass)"],
+      "stations": [
+        {"order": 1, "code": "CCG", "name": "Churchgate", "slow_stop": true, "fast_stop": true},
+        {"order": 2, "code": "MEL", "name": "Marine Lines", "slow_stop": true, "fast_stop": false},
+        {"order": 3, "code": "CYR", "name": "Charni Road", "slow_stop": true, "fast_stop": false},
+        {"order": 4, "code": "GTR", "name": "Grant Road", "slow_stop": true, "fast_stop": false},
+        {"order": 5, "code": "BCL", "name": "Mumbai Central", "slow_stop": true, "fast_stop": true},
+        {"order": 6, "code": "MX", "name": "Mahalaxmi", "slow_stop": true, "fast_stop": false},
+        {"order": 7, "code": "PL", "name": "Lower Parel", "slow_stop": true, "fast_stop": false},
+        {"order": 8, "code": "EPR", "name": "Prabhadevi (Elphinstone)", "slow_stop": true, "fast_stop": false},
+        {"order": 9, "code": "DDR", "name": "Dadar", "slow_stop": true, "fast_stop": true, "interchange": true},
+        {"order": 10, "code": "MRU", "name": "Matunga Road", "slow_stop": true, "fast_stop": false},
+        {"order": 11, "code": "MM", "name": "Mahim Junction", "slow_stop": true, "fast_stop": false, "interchange": true},
+        {"order": 12, "code": "BA", "name": "Bandra", "slow_stop": true, "fast_stop": true, "interchange": true},
+        {"order": 13, "code": "KHAR", "name": "Khar Road", "slow_stop": true, "fast_stop": false},
+        {"order": 14, "code": "STC", "name": "Santacruz", "slow_stop": true, "fast_stop": false},
+        {"order": 15, "code": "VLP", "name": "Vile Parle", "slow_stop": true, "fast_stop": false},
+        {"order": 16, "code": "ADH", "name": "Andheri", "slow_stop": true, "fast_stop": true, "interchange": true},
+        {"order": 17, "code": "JOS", "name": "Jogeshwari", "slow_stop": true, "fast_stop": false},
+        {"order": 18, "code": "RMAR", "name": "Ram Mandir", "slow_stop": true, "fast_stop": false},
+        {"order": 19, "code": "GMN", "name": "Goregaon", "slow_stop": true, "fast_stop": true, "interchange": true},
+        {"order": 20, "code": "MDD", "name": "Malad", "slow_stop": true, "fast_stop": false},
+        {"order": 21, "code": "KILE", "name": "Kandivali", "slow_stop": true, "fast_stop": false},
+        {"order": 22, "code": "BVI", "name": "Borivali", "slow_stop": true, "fast_stop": true},
+        {"order": 23, "code": "DIC", "name": "Dahisar", "slow_stop": true, "fast_stop": false},
+        {"order": 24, "code": "MIRA", "name": "Mira Road", "slow_stop": true, "fast_stop": false},
+        {"order": 25, "code": "BYR", "name": "Bhayandar", "slow_stop": true, "fast_stop": true},
+        {"order": 26, "code": "NIG", "name": "Naigaon", "slow_stop": true, "fast_stop": false},
+        {"order": 27, "code": "BSR", "name": "Vasai Road", "slow_stop": true, "fast_stop": true, "interchange": true},
+        {"order": 28, "code": "NSP", "name": "Nallasopara", "slow_stop": true, "fast_stop": false},
+        {"order": 29, "code": "VR", "name": "Virar", "slow_stop": true, "fast_stop": true},
+        {"order": 30, "code": "VTN", "name": "Vaitarna", "slow_stop": true, "fast_stop": false},
+        {"order": 31, "code": "SAH", "name": "Saphale", "slow_stop": true, "fast_stop": false},
+        {"order": 32, "code": "KLV", "name": "Kelve Road", "slow_stop": true, "fast_stop": false},
+        {"order": 33, "code": "PLG", "name": "Palghar", "slow_stop": true, "fast_stop": true},
+        {"order": 34, "code": "BOR", "name": "Boisar", "slow_stop": true, "fast_stop": true},
+        {"order": 35, "code": "VGN", "name": "Vangaon", "slow_stop": true, "fast_stop": false},
+        {"order": 36, "code": "DRD", "name": "Dahanu Road", "slow_stop": true, "fast_stop": true}
+      ]
+    },
+    "central_main": {
+      "id": "central",
+      "name": "Central Line (Main)",
+      "zone": "Central Railway",
+      "terminal_south": "CSMT",
+      "terminal_north_branches": ["Kasara (KSRA)", "Khopoli (KHPI)"],
+      "interchanges": ["Dadar (CR/WR)", "Kurla (CR/Harbour)", "Thane (Trans-Harbour)", "Kalyan (Fork)"],
+      "key_stations": [
+        "CSMT", "Masjid", "Sandhurst Road", "Byculla", "Chinchpokli", "Currey Road",
+        "Parel", "Dadar", "Matunga", "Sion", "Kurla", "Vidyavihar", "Ghatkopar",
+        "Vikhroli", "Kanjurmarg", "Bhandup", "Nahur", "Mulund", "Thane", "Kalva",
+        "Mumbra", "Diva", "Kopar", "Dombivli", "Thakurli", "Kalyan", "Vitthalwadi",
+        "Ulhasnagar", "Ambernath", "Badlapur", "Vangani", "Shelu", "Neral", "Karjat",
+        "Khopoli", "Shahad", "Ambivli", "Titwala", "Khadavli", "Vasind", "Asangaon",
+        "Atgaon", "Khardi", "Kasara"
+      ]
+    },
+    "harbour": {
+      "id": "harbour",
+      "name": "Harbour Line",
+      "zone": "Central Railway",
+      "terminal_south": "CSMT",
+      "terminal_east": "Panvel (PNVL)",
+      "terminal_west_branch": "Goregaon (GMN)",
+      "interchanges": ["Kurla (CR/Harbour)", "Wadala Road (Branch)", "Vashi (Trans-Harbour)"],
+      "key_stations": [
+        "CSMT", "Masjid", "Sandhurst Road", "Dockyard Road", "Reay Road", "Cotton Green",
+        "Sewri", "Wadala Road", "King Circle", "Mahim", "Bandra", "Khar Road", "Santacruz",
+        "Vile Parle", "Andheri", "Jogeshwari", "Ram Mandir", "Goregaon", "GTB Nagar",
+        "Chunabhatti", "Kurla", "Tilak Nagar", "Chembur", "Govandi", "Mankhurd", "Vashi",
+        "Sanpada", "Juinagar", "Nerul", "Seawoods-Darave", "Belapur", "Kharghar", "Panvel"
+      ]
+    },
+    "trans_harbour": {
+      "id": "trans_harbour",
+      "name": "Trans-Harbour Line",
+      "zone": "Central Railway",
+      "terminal_north": "Thane (TNA)",
+      "terminal_south": "Panvel (PNVL) / Vashi (VSH)",
+      "key_stations": [
+        "Thane", "Airoli", "Rabale", "Ghansoli", "Kopar Khairane", "Turbhe",
+        "Sanpada", "Vashi", "Juinagar", "Nerul", "Seawoods", "Belapur", "Panvel"
+      ]
+    }
+  }
+}

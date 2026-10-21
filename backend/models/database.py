@@ -1,42 +1,60 @@
-from datetime import datetime
-from sqlalchemy import DateTime, Float, Index, Integer, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
-from ..database import Base
+import uuid
+from sqlalchemy import Column, String, Integer, Numeric, DateTime, Text, ForeignKey, Index, func
+from sqlalchemy.dialects.postgresql import UUID
+from backend.database import Base
 
+class Line(Base):
+    __tablename__ = "lines"
+
+    id = Column(String, primary_key=True) # 'central', 'western', 'harbour'
+    name = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+class Station(Base):
+    __tablename__ = "stations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    line_id = Column(String, ForeignKey("lines.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(150), nullable=False)
+    display_order = Column(Integer)
+    lat = Column(Numeric(10, 6))
+    lng = Column(Numeric(10, 6))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("uq_line_station", "line_id", "name", unique=True),
+    )
 
 class DelayRecord(Base):
     __tablename__ = "delay_records"
-    __table_args__ = (Index("ix_delay_records_line_recorded", "line", "recorded_at"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    line: Mapped[str] = mapped_column(String(20), index=True)
-    station: Mapped[str] = mapped_column(String(100), index=True)
-    direction: Mapped[str] = mapped_column(String(20), default="both")
-    delay_minutes: Mapped[int] = mapped_column(Integer, default=0)
-    severity: Mapped[str] = mapped_column(String(20), default="normal")
-    source: Mapped[str] = mapped_column(String(120), default="manual")
-    announcement: Mapped[str | None] = mapped_column(Text, nullable=True)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    line_id = Column(String, ForeignKey("lines.id", ondelete="CASCADE"), nullable=False)
+    station_id = Column(UUID(as_uuid=True), ForeignKey("stations.id", ondelete="SET NULL"))
+    station_name = Column(String(150))
+    delay_minutes = Column(Integer, nullable=False)
+    direction = Column(String(10)) # 'up', 'down', NULL
+    severity = Column(String(20)) # 'minor', 'moderate', 'severe'
+    source = Column(String(20)) # 'scraper', 'user', 'api'
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
+    __table_args__ = (
+        Index("idx_delay_records_line_created", "line_id", "created_at", postgresql_using="btree"),
+        Index("idx_delay_records_station_created", "station_name", "created_at", postgresql_using="btree"),
+        Index("idx_delay_records_created", "created_at", postgresql_using="btree"),
+    )
 
-class LineStatus(Base):
-    __tablename__ = "line_statuses"
+class LineStatusSnapshot(Base):
+    __tablename__ = "line_status_snapshots"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    line: Mapped[str] = mapped_column(String(20), unique=True, index=True)
-    status: Mapped[str] = mapped_column(String(20), default="normal")
-    average_delay_minutes: Mapped[float] = mapped_column(Float, default=0)
-    active_incidents: Mapped[int] = mapped_column(Integer, default=0)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-
-class StationMetric(Base):
-    __tablename__ = "station_metrics"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    line: Mapped[str] = mapped_column(String(20), index=True)
-    station: Mapped[str] = mapped_column(String(100), index=True)
-    average_delay_minutes: Mapped[float] = mapped_column(Float, default=0)
-    trains_observed: Mapped[int] = mapped_column(Integer, default=0)
-    reliability_percent: Mapped[float] = mapped_column(Float, default=100)
-    measured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    line_id = Column(String, ForeignKey("lines.id"), nullable=False)
+    avg_delay_minutes = Column(Integer)
+    delayed_count = Column(Integer)
+    total_incidents = Column(Integer)
+    status = Column(String(50))
+    snapshot_at = Column(DateTime(timezone=True), server_default=func.now())
