@@ -12,6 +12,7 @@ export interface DelayRecord {
   direction?: string | null;
   severity: Severity;
   source?: string;
+  notes?: string | null;
   created_at: string;
   updated_at?: string;
 }
@@ -96,5 +97,9 @@ export interface StatsTrendsResponse {
 
 // Backwards-compatible aliases used by older components
 export type LineStatus = LineStatusItem;
-export type TrendPoint = TrendItem;
+export type TrendPoint = {
+  date: string;
+  average_delay_minutes: number;
+  observations?: number;
+};
 export type DelayIncident = DelayRecord;
