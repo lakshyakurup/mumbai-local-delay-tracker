@@ -2,16 +2,18 @@ interface LineCardProps {
   name: string;
   status: string;
   delayTime: string;
-  lineColorClass: string;
+  lineColorClass?: string;
 }
 
 export default function LineCard({ name, status, delayTime }: LineCardProps) {
+  const title = name.toLowerCase().includes("line") ? name : `${name} Line`;
+
   return (
     <div className="group relative p-6 bg-neutral-950/80 backdrop-blur-md border border-neutral-800 hover:border-neutral-600 transition-all duration-300 rounded-2xl shadow-xl">
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent rounded-2xl pointer-events-none" />
 
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-bold text-white tracking-tight">{name} Line</h3>
+        <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
         <span className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider bg-neutral-900 border border-neutral-700 text-neutral-300 rounded-md">
           {status}
         </span>
