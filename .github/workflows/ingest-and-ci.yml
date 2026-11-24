@@ -24,7 +24,7 @@ jobs:
           if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
 
       - name: Execute Pipeline
-        run: python backend/main.py
+        run: python -m backend.main
 
       - name: Setup Node
         uses: actions/setup-node@v4
