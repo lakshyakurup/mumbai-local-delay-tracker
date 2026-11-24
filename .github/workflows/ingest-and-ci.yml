@@ -1,8 +1,6 @@
 name: Transit Tracker Pipeline
 
 on:
-  schedule:
-    - cron: '0 */1 * * *' # Every hour
   workflow_dispatch:
   push:
     branches: [ main ]
@@ -10,6 +8,9 @@ on:
 jobs:
   scrape-and-validate:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite:///./ci.db
+      SCRAPER_TOKEN: ci-test-token
     steps:
       - uses: actions/checkout@v4
 
@@ -23,8 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
 
-      - name: Execute Pipeline
-        run: python -m backend.main
+      - name: Run Backend Tests
+        run: python -m pytest backend/tests -q
 
       - name: Setup Node
         uses: actions/setup-node@v4
