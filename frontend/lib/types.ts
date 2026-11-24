@@ -1,11 +1,100 @@
 export const RAILWAY_LINES = ["Central", "Western", "Harbour"] as const;
 export type RailwayLine = (typeof RAILWAY_LINES)[number];
-export type Severity = "normal" | "minor" | "major" | "severe";
-export interface DelayRecord { id: number; line: string; station: string; direction: string; delay_minutes: number; severity: Severity; announcement?: string; recorded_at: string; }
-export interface LineStatus { line: RailwayLine; status: Severity; average_delay_minutes: number; active_incidents: number; updated_at: string; }
-export interface StationMetric { line: RailwayLine; station: string; average_delay_minutes: number; trains_observed: number; reliability_percent: number; measured_at: string; }
-export interface StatsSummary { window_hours: number; total_records: number; average_delay_minutes: number; peak_hour: number | null; by_line: Record<string, number>; }
-export interface TrendPoint { date: string; average_delay_minutes: number; observations: number; }
-export interface DelayIncident { id: number; line: RailwayLine; direction: "UP" | "DN"; station: string; affected_stretch: string; delay_minutes: number; priority: "Minor" | "Major" | "Severe"; announcement_text: string; created_at: string; }
-export interface DelayStats { total_active_delays: number; average_delay_minutes: number; worst_affected_line: RailwayLine | null; most_affected_stretch: string | null; }
-export interface ApiErrorPayload { detail?: string; }
+
+export type Severity = "normal" | "minor" | "moderate" | "severe";
+export type LineStatusCode = "ON_TIME" | "DELAYED" | "CRITICAL" | "UNKNOWN";
+
+export interface DelayRecord {
+  id: string;
+  line: string;
+  station: string;
+  delay_minutes: number;
+  direction?: string | null;
+  severity: Severity;
+  source?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface DelaysListResponse {
+  delays: DelayRecord[];
+  count: number;
+  total_records: number;
+  page: number;
+  limit: number;
+}
+
+export interface LineStatusItem {
+  line_id: string;
+  line_name: string;
+  status: LineStatusCode;
+  avg_delay_minutes: number;
+  delay_percentage: number;
+  last_updated: string;
+  station_count: number;
+  delayed_stations: number;
+}
+
+export interface LinesStatusResponse {
+  lines: LineStatusItem[];
+  timestamp: string;
+}
+
+export interface StationMetric {
+  station_id: string;
+  name: string;
+  order: number;
+  avg_delay_minutes: number;
+  incidents_7d: number;
+  on_time_percentage: number;
+  last_delay?: string | null;
+  passenger_volume_estimate?: number | null;
+}
+
+export interface LineStationsResponse {
+  line: string;
+  stations: StationMetric[];
+}
+
+export interface MostDelayedStation {
+  name: string;
+  line: string;
+  avg_delay: number;
+}
+
+export interface StatsSummary {
+  avg_delay_minutes_all_lines: number;
+  peak_hour: string;
+  peak_hour_avg_delay: number;
+  total_delays_24h: number;
+  most_delayed_station: MostDelayedStation;
+  on_time_percentage: number;
+  measurement_period_hours: number;
+}
+
+export interface StatsSummaryResponse {
+  summary: StatsSummary;
+  timestamp: string;
+}
+
+export interface LineBreakdownDetail {
+  avg_delay: number;
+  count: number;
+}
+
+export interface TrendItem {
+  period: string;
+  avg_delay_minutes: number;
+  delay_count: number;
+  line_breakdown: Record<string, LineBreakdownDetail>;
+}
+
+export interface StatsTrendsResponse {
+  trends: TrendItem[];
+  granularity: "hourly" | "daily" | "weekly";
+}
+
+// Backwards-compatible aliases used by older components
+export type LineStatus = LineStatusItem;
+export type TrendPoint = TrendItem;
+export type DelayIncident = DelayRecord;
