@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     database_url: str
     cors_origins: str = "http://localhost:3000"
     scraper_token: str
-    scraper_source_url: str
+    scraper_source_url: str | None = None
     rate_limit: str = "120/minute"
     environment: str = "production"
     log_level: str = "INFO"
