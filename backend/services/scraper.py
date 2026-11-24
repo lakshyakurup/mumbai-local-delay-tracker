@@ -1,17 +1,77 @@
 import logging
 import httpx
 from typing import List, Dict, Any, Union
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from backend.config import settings
 from backend.database import SessionLocal
 from backend.models.database import DelayRecord, Line, Station
 
 logger = logging.getLogger(__name__)
 
+def severity_for_delay(delay_minutes: int) -> str:
+    """Public helper used by tests and other callers."""
+    if delay_minutes <= 0:
+        return "normal"
+    if delay_minutes <= 5:
+        return "minor"
+    elif delay_minutes <= 14:
+        return "moderate"
+    else:
+        return "severe"
+
+def parse_status_payload(payload: Dict[str, Any]) -> List[Any]:
+    """Legacy-compatible parser expected by tests. Filters to known lines."""
+    known_lines = {"central", "western", "harbour"}
+    updates = []
+    items = payload.get("updates") or payload.get("delays") or []
+    for item in items:
+        line_raw = item.get("line") or item.get("line_id") or ""
+        line_id = str(line_raw).lower().strip()
+        station = (item.get("station") or item.get("station_name") or "").strip()
+        delay = item.get("delay_minutes")
+        if line_id not in known_lines or not station or delay is None:
+            continue
+        # Return simple namespace-like objects for test compatibility
+        class Update:
+            pass
+        u = Update()
+        u.line = line_id
+        u.station = station
+        u.delay_minutes = int(delay)
+        updates.append(u)
+    return updates
+
+def parse_status_text(text: str) -> List[Any]:
+    """Simple text parser expected by tests."""
+    # Example: "Western - Bandra 14 min"
+    parts = text.replace("-", " ").split()
+    if len(parts) < 3:
+        return []
+    line = parts[0].lower()
+    # Find number
+    delay = 0
+    station_parts = []
+    for p in parts[1:]:
+        if p.isdigit():
+            delay = int(p)
+            break
+        station_parts.append(p)
+    station = " ".join(station_parts).strip()
+    class Update:
+        pass
+    u = Update()
+    u.line = line
+    u.station = station
+    u.delay_minutes = delay
+    return [u]
+
 class ScraperService:
     @staticmethod
     def fetch_data() -> Union[Dict[str, Any], str, None]:
         headers = {"User-Agent": "MumbaiLocalTrackerScraper/2.0"}
+        if not settings.scraper_source_url:
+            logger.warning("No SCRAPER_SOURCE_URL configured; skipping fetch")
+            return None
         for attempt in range(1, 4):
             try:
                 with httpx.Client(timeout=10.0) as client:
@@ -29,18 +89,13 @@ class ScraperService:
 
     @staticmethod
     def classify_severity(delay_minutes: int) -> str:
-        if delay_minutes <= 5:
-            return "minor"
-        elif delay_minutes <= 14:
-            return "moderate"
-        else:
-            return "severe"
+        return severity_for_delay(delay_minutes)
 
     @classmethod
     def parse_delays(cls, raw_feed: Union[Dict[str, Any], str]) -> List[Dict[str, Any]]:
         parsed_records = []
         if isinstance(raw_feed, dict):
-            items = raw_feed.get("delays", [])
+            items = raw_feed.get("delays", []) or raw_feed.get("updates", [])
             for item in items:
                 line_id = item.get("line_id") or item.get("line")
                 station_name = item.get("station_name") or item.get("station")
