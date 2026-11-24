@@ -6,9 +6,10 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
 
 from backend.config import settings
-from backend.database import engine, Base
+from backend.database import engine, Base, SessionLocal
 from backend.middleware import LoggingMiddleware, limiter, RateLimitExceeded, _rate_limit_exceeded_handler
-from backend.routers import delays
+from backend.routers import delays, stats, lines
+from backend.models.database import Line
 from backend.services.scheduler import start_scheduler
 
 logging.basicConfig(level=settings.log_level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -17,7 +18,7 @@ app = FastAPI(
     title="Mumbai Local Train Delay Tracker API",
     version="2.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 app.state.limiter = limiter
@@ -34,16 +35,40 @@ app.add_middleware(
 app.add_middleware(LoggingMiddleware)
 
 app.include_router(delays.router)
+app.include_router(stats.router)
+app.include_router(lines.router)
+
+DEFAULT_LINES = [
+    ("central", "Central Line"),
+    ("western", "Western Line"),
+    ("harbour", "Harbour Line"),
+]
+
+def _seed_lines():
+    db = SessionLocal()
+    try:
+        for lid, name in DEFAULT_LINES:
+            if not db.query(Line).filter(Line.id == lid).first():
+                db.add(Line(id=lid, name=name))
+        db.commit()
+    except Exception as e:
+        logging.getLogger(__name__).warning("Line seed skipped: %s", e)
+        db.rollback()
+    finally:
+        db.close()
 
 @app.on_event("startup")
 def startup_event():
     Base.metadata.create_all(bind=engine)
-    start_scheduler()
+    _seed_lines()
+    try:
+        start_scheduler()
+    except Exception as e:
+        logging.getLogger(__name__).warning("Scheduler start failed: %s", e)
 
 @app.get("/health", tags=["System"])
 def health_check():
     from sqlalchemy import text
-    from backend.database import SessionLocal
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
@@ -52,11 +77,11 @@ def health_check():
         db_status = "disconnected"
     finally:
         db.close()
-        
+
     return {
         "status": "healthy" if db_status == "connected" else "degraded",
         "database": db_status,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 @app.get("/metrics", include_in_schema=False, tags=["System"])
