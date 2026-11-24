@@ -1,17 +1,54 @@
-import type { DelayRecord, LineStatus, StatsSummary, StationMetric, TrendPoint } from "@/lib/types";
+import type {
+  DelayRecord,
+  DelaysListResponse,
+  LinesStatusResponse,
+  LineStationsResponse,
+  StatsSummaryResponse,
+  StatsTrendsResponse,
+} from "@/lib/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { ...init, headers: { "Content-Type": "application/json", ...init?.headers }, cache: "no-store" });
-  if (!response.ok) throw new Error(`API request failed (${response.status})`);
+  const response = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...init?.headers,
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`API request failed (${response.status}): ${text || response.statusText}`);
+  }
   return response.json() as Promise<T>;
 }
 
-export const fetchLineStatus = () => request<LineStatus[]>("/api/v2/lines/status");
-export const fetchDelaysV2 = (line?: string) => request<DelayRecord[]>(`/api/v2/delays${line ? `?line=${line.toLowerCase()}` : ""}`);
-export const fetchSummary = () => request<StatsSummary>("/api/v2/stats/summary");
-export const fetchTrends = () => request<TrendPoint[]>("/api/v2/stats/trends");
-export const fetchStations = (line: string) => request<StationMetric[]>(`/api/v2/lines/${line.toLowerCase()}/stations`);
-export const fetchDelays = (line?: string) => fetchDelaysV2(line);
-export const fetchStats = () => fetchSummary();
+export const fetchLineStatus = async (): Promise<LinesStatusResponse> => {
+  return request<LinesStatusResponse>("/api/v2/lines/status");
+};
+
+export const fetchDelaysV2 = async (line?: string): Promise<DelaysListResponse> => {
+  const qs = line ? `?line=${encodeURIComponent(line.toLowerCase())}` : "";
+  return request<DelaysListResponse>(`/api/v2/delays${qs}`);
+};
+
+export const fetchDelays = async (line?: string): Promise<DelayRecord[]> => {
+  const data = await fetchDelaysV2(line);
+  return data.delays ?? [];
+};
+
+export const fetchSummary = async (): Promise<StatsSummaryResponse> => {
+  return request<StatsSummaryResponse>("/api/v2/stats/summary");
+};
+
+export const fetchStats = fetchSummary;
+
+export const fetchTrends = async (): Promise<StatsTrendsResponse> => {
+  return request<StatsTrendsResponse>("/api/v2/stats/trends");
+};
+
+export const fetchStations = async (line: string): Promise<LineStationsResponse> => {
+  return request<LineStationsResponse>(`/api/v2/lines/${encodeURIComponent(line.toLowerCase())}/stations`);
+};
