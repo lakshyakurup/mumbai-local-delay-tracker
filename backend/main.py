@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,12 +14,46 @@ from backend.models.database import Line
 from backend.services.scheduler import start_scheduler
 
 logging.basicConfig(level=settings.log_level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
+
+DEFAULT_LINES = [
+    ("central", "Central Line"),
+    ("western", "Western Line"),
+    ("harbour", "Harbour Line"),
+]
+
+
+def _seed_lines() -> None:
+    db = SessionLocal()
+    try:
+        for lid, name in DEFAULT_LINES:
+            if not db.query(Line).filter(Line.id == lid).first():
+                db.add(Line(id=lid, name=name))
+        db.commit()
+    except Exception as e:
+        logger.warning("Line seed skipped: %s", e)
+        db.rollback()
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    _seed_lines()
+    try:
+        start_scheduler()
+    except Exception as e:
+        logger.warning("Scheduler start failed: %s", e)
+    yield
+
 
 app = FastAPI(
     title="Mumbai Local Train Delay Tracker API",
     version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter
@@ -38,33 +73,6 @@ app.include_router(delays.router)
 app.include_router(stats.router)
 app.include_router(lines.router)
 
-DEFAULT_LINES = [
-    ("central", "Central Line"),
-    ("western", "Western Line"),
-    ("harbour", "Harbour Line"),
-]
-
-def _seed_lines():
-    db = SessionLocal()
-    try:
-        for lid, name in DEFAULT_LINES:
-            if not db.query(Line).filter(Line.id == lid).first():
-                db.add(Line(id=lid, name=name))
-        db.commit()
-    except Exception as e:
-        logging.getLogger(__name__).warning("Line seed skipped: %s", e)
-        db.rollback()
-    finally:
-        db.close()
-
-@app.on_event("startup")
-def startup_event():
-    Base.metadata.create_all(bind=engine)
-    _seed_lines()
-    try:
-        start_scheduler()
-    except Exception as e:
-        logging.getLogger(__name__).warning("Scheduler start failed: %s", e)
 
 @app.get("/health", tags=["System"])
 def health_check():
@@ -83,6 +91,7 @@ def health_check():
         "database": db_status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
 
 @app.get("/metrics", include_in_schema=False, tags=["System"])
 def metrics():
